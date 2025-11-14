@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Motore Lotto-compliant per combinazioni con vincoli e pruning."
 authors = [{ name = "Giancarlo" }]
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.8"
 license = { text = "MIT" }
 
 [project.urls]
