@@ -7,6 +7,7 @@ from .config_lotto import (
 )
 from .smart_lotto_search import smart_lotto_search
 from .benchmark import benchmark_search
+from .eval_lotto import evaluate_combo, evaluate_combos_from_file
 
 __all__ = [
     "LottoConfig",
@@ -16,4 +17,6 @@ __all__ = [
     "preset_medium",
     "preset_hard",
     "get_preset",
+    "evaluate_combo",
+    "evaluate_combos_from_file",
 ]
