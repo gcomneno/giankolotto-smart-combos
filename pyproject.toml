@@ -7,6 +7,9 @@ readme = "README.md"
 requires-python = ">=3.8"
 license = { text = "MIT" }
 
+[project.scripts]
+giankolotto-smart-combos = "giankolotto_smart_combos.cli:main"
+
 [project.urls]
 Homepage = "https://github.com/gcomneno/giankolotto-smart-combos"
 
