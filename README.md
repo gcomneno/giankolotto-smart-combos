@@ -4,6 +4,16 @@ Motore Lotto-compliant per la generazione di **combinazioni** di numeri (1–90)
 - ✅ Vincoli su somma, pari/dispari, decine coinvolte, range massimo.
 - ✅ Motore a backtracking con vincoli **parziali** e **finali**, separati per modulo.
 
+Funzionalità:
+- scelta preset
+- override dinamici dei vincoli
+- progress bar
+- benchmark completo
+- output delle combinazioni con `--print-combos`
+- pronto per installazione PyPI
+
+---
+
 ## Installazione (locale)
 ```text
 git clone https://github.com/gcomneno/giankolotto-smart-combos.git
@@ -212,10 +222,256 @@ for combo in smart_lotto_search(cfg):
     print(combo)
 ```
 
+## 🔌 Architettura interna (schema ASCII)
+
+                     ┌────────────────────────┐
+                     │        cli.py          │
+                     │ Interfaccia a riga     │
+                     │ di comando             │
+                     └────────────┬───────────┘
+                                  │
+                                  ▼
+                     ┌────────────────────────┐
+                     │      benchmark.py      │
+                     │ Mini-profiler +        │
+                     │ progress bar           │
+                     └────────────┬───────────┘
+                                  │
+                                  ▼
+                     ┌────────────────────────┐
+                     │  smart_lotto_search.py │
+                     │ Motore combinatorio    │
+                     │ DFS + pruning          │
+                     └────────────┬───────────┘
+                                  │
+                                  ▼
+                     ┌────────────────────────┐
+                     │  constraints_lotto.py  │
+                     │ Vincoli parziali e     │
+                     │ completi               │
+                     └────────────┬───────────┘
+                                  │
+                                  ▼
+                     ┌────────────────────────┐
+                     │    config_lotto.py     │
+                     │ Config + preset +      │
+                     │ utilities              │
+                     └────────────────────────┘
+
+
+                     ┌────────────────────────┐
+                     │     eval_lotto.py      │
+                     │ Valutazione combinaz.   │
+                     │ utente / file            │
+                     └────────────┬───────────┘
+                                  │
+                                  ▼
+                     ┌────────────────────────┐
+                     │    config_lotto.py     │
+                     └────────────────────────┘
+
 ## 🧩 Moduli
-config_lotto.py → configurazione + utilities
-constraints_lotto.py → vincoli parziali e completi
-smart_lotto_search.py → il motore combinatorio con pruning
+
+### `config_lotto.py`
+Gestisce la **configurazione del motore**:
+- definizione della dataclass `LottoConfig`
+- preset (`soft`, `medium`, `hard`)
+- override parametrici
+- utility come `decade_of()`
+- validazione di base dei parametri
+
+### `constraints_lotto.py`
+Raccoglie le **funzioni di vincolo** applicate durante la costruzione delle combinazioni:
+- controllo di somma (min/max)
+- pari/dispari
+- range massimo (`max_range`)
+- numero di decine distinte
+- filtro rapido per pruning basato sui prefissi (early stopping)
+
+Questi vincoli sono progettati per essere **veloci, side-effect free** e facilmente estendibili.
+
+### `smart_lotto_search.py`
+Il **motore combinatorio** del progetto:
+- generatore depth-first delle combinazioni ordinate
+- pruning aggressivo basato sui vincoli
+- conteggio dei nodi visitati (per il profiler)
+- compatibile con numeri arbitrari (`range`, liste personalizzate, ecc.)
+- progettato per scalare con spazi anche molto grandi
+
+### `benchmark.py`
+Mini-framework di **benchmark interno**:
+- misurazione precisa del tempo
+- combinazioni/s
+- nodi visitati / nodi totali teorici
+- progress bar dinamica con:
+  - percentuale
+  - nodi/s (media e istantanei)
+  - combos/s (media e istantanei)
+  - ETA stimato
+
+### `eval_lotto.py`
+Modulo per la **valutazione di combinazioni utente**:
+- parsing robusto da file di testo
+- validazione rispetto a `LottoConfig`
+- metriche dettagliate (somma, range, pari/dispari, decine)
+- supporto per analisi bulk e pipeline automatiche
+
+### `cli.py`
+Interfaccia a riga di comando installabile come:
+
+### Esempi e Script
+
+#### `examples/playground.py`
+Script dimostrativo che mostra:
+- uso del benchmark
+- progress bar con mini-profiler
+- stampa combinazioni opzionale
+
+#### `examples/eval_from_file.py`
+Legge un file di combinazioni e le valuta secondo `LottoConfig`.
+
+**Nota tecnica — Python 3.13 "free-threaded"**
+Il motore combinatorio funziona perfettamente anche su Python 3.13** ma la procedura di packaging locale (`python -m build`) può fallire se eseguita con **CPython 3.13 in modalità free-threaded** (eseguibili `python3.13t`). Questo *non* dipende dal progetto, ma dal fatto che alcuni strumenti di build — in particolare **cffi** e tool come **maturin** — non supportano ancora la free-threaded ABI introdotta in Python 3.13.
+
+Per eseguire correttamente la build locale in vista di un rilascio su PyPI usare un interprete Python “standard” (non free-threaded), ad esempio:
+- Python **3.10**
+- Python **3.11**
+- Python **3.12**
+
+Esempio:
+```bash
+  python3.12 -m venv .venv
+  source .venv/bin/activate
+  pip install --upgrade pip build twine
+  python -m build
+```
+
+Quando gli strumenti del Python ecosystem aggiorneranno il supporto al free-threaded interpreter, sarà possibile usare anche Python 3.13 senza workaround.
+
+## 🛠️ Come estendere il motore
+Il motore è progettato per permettere modifiche e nuove regole *senza toccare il core*.
+La struttura dei moduli consente di aggiungere vincoli, preset o strategie di pruning in modo isolato e sicuro.
+
+### ✔️ 1. Aggiungere un nuovo vincolo
+I vincoli risiedono in:
+```
+
+constraints_lotto.py
+
+````
+
+Per aggiungerne uno:
+
+1. Scrivi una nuova funzione di vincolo, es.:
+
+```python
+def constraint_my_custom_rule(prefix, cfg):
+    # ritorna True per continuare, False per prunare
+````
+
+2. Agganciala in `apply_constraints(...)`
+
+3. Se serve un parametro nuovo → aggiungilo in `LottoConfig` (config_lotto.py)
+
+Il motore DFS la userà in automatico.
+
+---
+
+### ✔️ 2. Aggiungere un nuovo preset
+
+I preset sono definiti in:
+
+```
+config_lotto.py
+```
+
+Basta aggiungere:
+
+```python
+def preset_my_mode():
+    return LottoConfig(
+        k=5,
+        min_sum=110,
+        min_even=2,
+        ...
+    )
+```
+
+E poi registrarli in `get_preset()`.
+
+---
+
+### ✔️ 3. Cambiare la strategia di pruning
+
+Se vuoi sperimentare nuove idee (range dinamici, bound tightening, heuristics),
+tocchi solo:
+
+```
+constraints_lotto.py      (funzioni di pruning)
+smart_lotto_search.py     (punto dove i vincoli vengono applicati)
+```
+
+Puoi:
+
+* spostare i controlli più presto (pruning aggressivo)
+* verificare nuove euristiche basate su somma parziale
+* implementare vincoli "soft" come priorità o scoring
+
+Il DFS è completamente modulare: ogni vincolo può decidere se continuare o tagliare.
+
+---
+
+### ✔️ 4. Integrare nuove metriche nel profiler
+
+Tutto in un unico posto:
+
+```
+benchmark.py
+```
+
+Qui puoi aggiungere:
+
+* nodi/s istantanei
+* medie mobili
+* stima qualità pruning
+* time-to-depth stat
+* profiling per decade/pari/dispari
+
+---
+
+### ✔️ 5. Aggiungere nuovi comandi CLI
+
+File:
+
+```
+cli.py
+```
+
+Puoi aggiungere flag come:
+
+* `--dump-stats`
+* `--export-csv`
+* `--strict`
+* `--no-pruning` per debug
+
+La CLI chiama `benchmark_search()`, quindi è facile aggiungere opzioni.
+
+---
+
+### ✔️ 6. Aggiungere strumenti esterni (analizzatori, predictor, scorer)
+
+Crea moduli separati, ad esempio:
+
+```
+analysis/
+    stats_decades.py
+    stats_parity.py
+    synergy_probe.py
+```
+
+E puoi integrarli senza mai toccare il motore.
+
+---
 
 ## 🤝 Contribuire
 Bug? Idee? Vincoli assurdi che vorresti aggiungere?
