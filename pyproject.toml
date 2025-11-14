@@ -1,17 +1,46 @@
 [project]
 name = "giankolotto-smart-combos"
 version = "0.1.0"
-description = "Motore Lotto-compliant per combinazioni con vincoli e pruning."
+description = "Motore Lotto-compliant per combinazioni con vincoli e pruning (Giadaware R&D)."
 authors = [{ name = "Giancarlo" }]
 readme = "README.md"
 requires-python = ">=3.8"
 license = { text = "MIT" }
 
-[project.scripts]
-giankolotto-smart-combos = "giankolotto_smart_combos.cli:main"
+dependencies = []
+
+keywords = [
+  "lotto",
+  "combinatorics",
+  "combinations",
+  "pruning",
+  "benchmark",
+  "giadaware",
+]
+
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3 :: Only",
+  "Operating System :: OS Independent",
+  "Topic :: Scientific/Engineering :: Mathematics",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+]
 
 [project.urls]
 Homepage = "https://github.com/gcomneno/giankolotto-smart-combos"
+"Bug Tracker" = "https://github.com/gcomneno/giankolotto-smart-combos/issues"
+
+[project.scripts]
+giankolotto-smart-combos = "giankolotto_smart_combos.cli:main"
 
 [build-system]
 requires = ["setuptools>=61.0"]
